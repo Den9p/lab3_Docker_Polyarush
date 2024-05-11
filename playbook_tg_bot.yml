@@ -1,0 +1,156 @@
+- name: Configure PostgreSQL replication
+  hosts: db_master
+  become: true
+  tasks:
+    - name: Install pexpect package on db_master
+      apt:
+        name: python3-pexpect
+        state: present
+      when: ansible_distribution == 'Debian'
+
+    - name: Install PostgreSQL and contrib packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - postgresql-15
+        - postgresql-contrib-15
+
+    - name: Create replication user
+      become_user: postgres
+      expect:
+        command: createuser --replication -P repl_user
+        responses:
+          "Enter password for new role:": "repl\n"
+          "Enter it again:": "repl\n"
+
+    - name: Add configuration to postgresql.conf
+      lineinfile:
+        path: /etc/postgresql/15/main/postgresql.conf
+        line: "{{ item }}"
+        insertafter: EOF
+      with_items:
+        - "listen_addresses = 'localhost, {{ hostvars['db_master']['ansible_host'] }}'"
+        - "wal_level = replica"
+        - "max_wal_senders = 10"
+        - "max_replication_slots = 10"
+        - "hot_standby = on"
+        - "hot_standby_feedback = on"
+        - "log_replication_commands = on"
+      notify: restart postgresql
+
+    - name: Add entries to pg_hba.conf
+      lineinfile:
+        path: /etc/postgresql/15/main/pg_hba.conf
+        line: |
+          host replication repl_user {{ hostvars['db_repl']['ansible_host'] }}/32 md5
+          host all all {{ hostvars['db_master']['ansible_host'] }}/32 md5
+        insertafter: EOF
+      notify: restart postgresql
+
+  handlers:
+    - name: restart postgresql
+      systemd:
+        name: postgresql
+        state: restarted
+
+- name: Configure PostgreSQL replication on client
+  hosts: db_repl
+  become: true
+  tasks:
+    - name: Install pexpect package on db_repl
+      apt:
+        name: python3-pexpect
+        state: present
+      when: ansible_distribution == 'Debian'
+
+    - name: Install PostgreSQL and contrib packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - postgresql-15
+        - postgresql-contrib-15
+
+    - name: Stop PostgreSQL service
+      expect:
+        command: sudo systemctl stop postgresql
+        responses:
+          "[sudo] password for {{ ansible_user }}:": "{{ ansible_ssh_pass }}"
+
+    - name: Remove existing data directory
+      expect:
+        command: sudo -i bash -c "rm -rf /var/lib/postgresql/15/main/*"
+        responses:
+          "[sudo] password for {{ ansible_user }}:": "{{ ansible_ssh_pass }}"
+
+    - name: Take base backup from master
+      become: true
+      become_user: postgres
+      expect:
+        command: >
+          pg_basebackup --host={{ hostvars['db_master']['ansible_host'] }}
+                        --username=repl_user
+                        --pgdata=/var/lib/postgresql/15/main
+                        --wal-method=stream
+                        --write-recovery-conf
+        responses:
+          "Password:": "repl\n"
+
+    - name: Start PostgreSQL service
+      expect:
+        command: sudo systemctl start postgresql
+        responses:
+          "[sudo] password for {{ ansible_user }}:": "{{ ansible_ssh_pass }}"
+
+
+- name: Change PostgreSQL password
+  hosts: db_master
+  become: true
+  tasks:
+    - name: Change PostgreSQL password
+      shell: |
+        sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'kali';"
+
+    - name: Create database
+      shell: |
+        sudo -u postgres psql -c "CREATE DATABASE db_polyarush;"
+
+    - name: Set permissions for log file
+      file:
+        path: /var/log/postgresql/postgresql-15-main.log
+        mode: "0777"
+
+- name: Clone git repository
+  hosts: db_master
+  become: true
+  tasks:
+    - name: Install required packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - python3-pip
+        - python3
+        - git
+
+    - name: Install Python packages
+      pip:
+        name: "{{ item }}"
+        extra_args: "--break-system-packages"
+      with_items:
+        - paramiko
+        - requests
+        - python-telegram-bot==13.7
+        - python-dotenv
+        - psycopg2-binary
+
+    - name: Create directory for repository
+      file:
+        path: "/home/{{ ansible_user }}/tgbot"
+        state: directory
+
+    - name: Clone git repository
+      git:
+        repo: https://github.com/Den9p/tgbot
+        dest: "/home/{{ ansible_user }}/tgbot"
