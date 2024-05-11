@@ -1,0 +1,2 @@
+db_master  ansible_host=192.168.0.31 ansible_connection=ssh ansible_user=kali ansible_ssh_pass=kali ansible_become=true ansible_become_pass=kali
+db_repl    ansible_host=192.168.0.32 ansible_connection=ssh ansible_user=kali ansible_ssh_pass=kali ansible_become=true ansible_become_pass=kali
