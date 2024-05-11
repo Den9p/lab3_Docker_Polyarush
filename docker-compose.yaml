@@ -1,0 +1,51 @@
+networks:
+ my_network:
+  driver: bridge
+
+services:
+ db:
+  image: 'bitnami/postgresql:15-debian-12'
+  container_name: db_image
+  ports:
+   - '4000:5432'
+  volumes:
+   - 'postgresql_master_data:/bitnami/postgresql'
+  environment:
+   - POSTGRESQL_REPLICATION_MODE=master
+   - POSTGRESQL_REPLICATION_USER=repl_user
+   - POSTGRESQL_REPLICATION_PASSWORD=repl
+   - POSTGRESQL_USERNAME=postgres
+   - POSTGRESQL_PASSWORD=kali
+   - POSTGRESQL_DATABASE=db_polyarush
+   - POSTGRESQL_LOG_CONNECTIONS=on
+  networks:
+   - my_network
+
+ db_repl:
+  image: 'bitnami/postgresql:15-debian-12'
+  container_name: db_repl_image
+  ports: 
+   - '4001:5432'
+  depends_on:
+   - db
+  environment:
+   - POSTGRESQL_REPLICATION_MODE=slave
+   - POSTGRESQL_REPLICATION_USER=repl_user
+   - POSTGRESQL_REPLICATION_PASSWORD=repl
+   - POSTGRESQL_MASTER_HOST=db
+   - POSTGRESQL_MASTER_PORT_NUMBER=5432
+   - POSTGRESQL_USERNAME=postgres
+   - POSTGRESQL_PASSWORD=kali
+  networks:
+   - my_network
+
+ tg_bot:
+  image: '192.168.0.42:5000/bot_image'
+  container_name: telegram_bot
+  depends_on:
+   - db
+  networks:
+   - my_network
+
+volumes:
+ postgresql_master_data:
