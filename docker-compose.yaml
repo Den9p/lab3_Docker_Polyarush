@@ -40,7 +40,7 @@ services:
    - my_network
 
  tg_bot:
-  image: '192.168.0.42:5000/bot_image'
+  build: './tgbot'
   container_name: telegram_bot
   depends_on:
    - db
