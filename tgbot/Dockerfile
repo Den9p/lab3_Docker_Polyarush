@@ -16,6 +16,9 @@ WORKDIR /app/tgbot
 # Копирование исходного кода приложения
 COPY . .
 
+# Копирование файла .env внутрь контейнера
+COPY ../.env .
+
 # Установка необходимых пакетов Python
 RUN pip install --no-cache-dir -r requirements.txt
 
