@@ -1,1 +1,10 @@
+FROM bitnami/postgresql:15-debian-12
 
+# Установка переменных окружения
+ENV POSTGRESQL_REPLICATION_MODE=slave \
+    POSTGRESQL_REPLICATION_USER=repl_user \
+    POSTGRESQL_REPLICATION_PASSWORD=repl \
+    POSTGRESQL_MASTER_HOST=db \
+    POSTGRESQL_MASTER_PORT_NUMBER=5432 \
+    POSTGRESQL_USERNAME=postgres \
+    POSTGRESQL_PASSWORD=kali
