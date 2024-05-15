@@ -28,6 +28,7 @@ services:
     container_name: bot_image
     depends_on:
       - db
+    env_file: .env  # указываем путь к файлу .env
     networks:
       - my_network
 
