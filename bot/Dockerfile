@@ -13,9 +13,6 @@ RUN mkdir -p /app/tgbot
 # Установка рабочей директории
 WORKDIR /app/tgbot
 
-# Копирование исходного кода приложения
-COPY . .
-
 # Установка необходимых пакетов Python
 RUN pip install --no-cache-dir -r requirements.txt
 
