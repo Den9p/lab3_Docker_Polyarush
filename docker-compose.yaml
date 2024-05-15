@@ -24,7 +24,7 @@ services:
       - my_network
 
   tg_bot:
-    build: ./tgbot
+    build: ./bot
     container_name: telegram_bot
     depends_on:
       - db
