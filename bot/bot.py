@@ -27,7 +27,29 @@ db_password = os.getenv('DB_PASSWORD')
 db_host = os.getenv('DB_HOST')
 db_port = os.getenv('DB_PORT')
 
-
+commands = [
+    ("/start", "Начало работы с ботом"),
+    ("/help", "Помощь по командам"),
+    ("/findPhoneNumbers", "Поиск телефонных номеров"),
+    ("/findEmails", "Поиск email-адресов"),
+    ("/verify_password", "Проверка сложности пароля"),
+    ("/get_release", "Получить информацию о релизе системы"),
+    ("/get_uname", "Получить системную информацию uname"),
+    ("/get_uptime", "Получить время работы системы"),
+    ("/get_df", "Получить информацию о файловых системах"),
+    ("/get_free", "Получить информацию о свободной памяти"),
+    ("/get_mpstat", "Получить статистику процессоров"),
+    ("/get_w", "Получить информацию о пользователях"),
+    ("/get_auths", "Получить информацию о последних логинах"),
+    ("/get_critical", "Получить информацию о последних критических событиях"),
+    ("/get_ps", "Получить список процессов"),
+    ("/get_ss", "Получить информацию о сетевых соединениях"),
+    ("/get_apt_list", "Получить список установленных пакетов APT"),
+    ("/get_services", "Получить статус системных сервисов"),
+    ("/get_repl_logs", "Получить логи репликации"),
+    ("/get_emails", "Получить список email-адресов"),
+    ("/get_phone_numbers", "Получить список телефонных номеров"),
+]
 
 # Подключаем логирование
 logging.basicConfig(
@@ -313,8 +335,12 @@ def start(update: Update, context):
     update.message.reply_text(f'Привет {user.full_name}!')
 
 
+# Функция для команды /help
 def helpCommand(update: Update, context):
-    update.message.reply_text('Help!')
+    help_text = "Доступные команды:\n\n"
+    for command, description in commands:
+        help_text += f"{command} - {description}\n"
+    update.message.reply_text(help_text)
 
 
 # 3.1.1 О релизе.
